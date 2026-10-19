@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GNARLY! PH — Barcode Generator</title>
+<link rel="icon" type="image/png" href="assets/img/favicon.png">
+<link rel="apple-touch-icon" href="assets/img/favicon.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><img src="assets/img/slogo.png" alt="GNARLY! PH"><span>BARCODE STUDIO</span></div>
+  <button class="theme-switch" id="dark" type="button" role="switch" aria-checked="false" aria-label="Dark mode" title="Toggle dark mode">
+    <span class="ts-track">
+      <span class="ts-stars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+      <span class="ts-cloud" aria-hidden="true"></span>
+      <span class="ts-thumb" aria-hidden="true"><i class="fa-solid fa-sun ts-sun"></i><i class="fa-solid fa-moon ts-moon"></i></span>
+    </span>
+  </button>
+</header>
+
+<main class="main">
+  <div class="section-header">
+    <div>
+      <h1 class="section-title"><i class="fa-solid fa-barcode"></i>BARCODE GENERATOR</h1>
+      <div class="section-sub">PICK A FORMAT &middot; ENTER OR AUTO-GENERATE NUMBERS &middot; DOWNLOAD OR PRINT</div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="col">
+      <section class="card">
+        <h2 class="card-title"><i class="fa-solid fa-layer-group"></i>1 &middot; CHOOSE FORMAT</h2>
+        <div class="cats" id="cats" role="tablist" aria-label="Format type"></div>
+        <div class="formats" id="formats" role="radiogroup" aria-label="Barcode format"></div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title"><i class="fa-solid fa-keyboard"></i>2 &middot; ENTER NUMBERS</h2>
+        <div class="form-row">
+          <label class="form-label" for="num">Barcode value <span id="count" class="count">0/0</span></label>
+          <input class="form-input mono" id="num" autocomplete="off" spellcheck="false" aria-describedby="hint msg">
+          <div class="hint" id="hint"></div>
+          <div class="msg" id="msg" role="alert"></div>
+        </div>
+        <div class="form-grid3">
+          <div class="form-row">
+            <label class="form-label" for="scale" id="scale-label">Bar width</label>
+            <div class="sel-wrap"><i class="fa-solid fa-arrows-left-right sel-icon"></i>
+              <select class="form-select" id="scale">
+                <option value="2">2 px &middot; Thin</option><option value="3" selected>3 px &middot; Standard</option><option value="4">4 px &middot; Wide</option><option value="5">5 px &middot; Extra wide</option>
+              </select><i class="fa-solid fa-chevron-down sel-arrow"></i>
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="height">Bar height</label>
+            <div class="sel-wrap"><i class="fa-solid fa-arrows-up-down sel-icon"></i>
+              <select class="form-select" id="height">
+                <option value="40">Short</option><option value="60" selected>Medium</option><option value="80">Tall</option><option value="100">Extra tall</option>
+              </select><i class="fa-solid fa-chevron-down sel-arrow"></i>
+            </div>
+          </div>
+        </div>
+        <div class="gen-row">
+          <label class="check"><input type="checkbox" id="showtext" checked> Show number</label>
+          <button class="btn btn-block" id="rnd" type="button"><i class="fa-solid fa-wand-magic-sparkles"></i> AUTO-GENERATE NUMBER</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="card sticky">
+        <h2 class="card-title"><i class="fa-solid fa-eye"></i>PREVIEW</h2>
+        <div id="out" class="out" aria-live="polite"></div>
+        <div class="kpis">
+          <div class="kpi"><span class="kpi-label">Encoded value</span><span class="kpi-val" id="encoded">—</span></div>
+          <div class="kpi"><span class="kpi-label" id="modules-label">Bar modules</span><span class="kpi-val" id="modules">—</span></div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="png" type="button"><i class="fa-solid fa-image"></i> PNG</button>
+          <button class="btn" id="svg" type="button"><i class="fa-solid fa-vector-square"></i> SVG</button>
+          <button class="btn btn-ghost" id="prt" type="button"><i class="fa-solid fa-print"></i> PRINT</button>
+          <button class="btn btn-ghost" id="cpy" type="button"><i class="fa-solid fa-copy"></i> COPY NUMBER</button>
+        </div>
+        <p class="note">Bars are always black on white so every scanner can read them. Keep the blank margin on both sides when you print.</p>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div id="print-area" aria-hidden="true"></div>
+<div class="toast" id="toast" role="status"></div>
+<script src="assets/js/script.js"></script>
+</body>
+</html>
