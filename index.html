@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0D0D0D">
+<meta name="description" content="Create 23 kinds of barcodes and QR codes, single or in bulk, and print them on label sheets. Works offline.">
+<title>GNARLY! PH — Barcode Generator</title>
+
+<!-- app install / icons -->
+<script>
+/* Self-heal: if a browser still holds an OLD copy of the styles/scripts (for example from an older offline cache),
+   clear the offline cache and reload once so page, styles and scripts always match. */
+window.BC_BUILD = "2026.10.20-12";
+addEventListener("load", function () {
+  setTimeout(function () {
+    var css = getComputedStyle(document.documentElement).getPropertyValue("--bc-build").replace(/["'\s]/g, "");
+    if (css === window.BC_BUILD && window.BC_JS_BUILD === window.BC_BUILD && window.BC_BATCH_BUILD === window.BC_BUILD && window.BC_MODAL_BUILD === window.BC_BUILD) {
+      try { sessionStorage.removeItem("bc-heal"); } catch (e) {}
+      return;
+    }
+    try { if (sessionStorage.getItem("bc-heal")) return; sessionStorage.setItem("bc-heal", "1"); } catch (e) { return; }   // only once per tab: no reload loops
+    var jobs = [];
+    if (navigator.serviceWorker) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }));
+    if (window.caches) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
+    Promise.all(jobs).catch(function () {}).then(function () { location.reload(); });
+  }, 400);
+});
+</script>
+<link rel="manifest" href="assets/pwa/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/icons/favicon-64.png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Barcodes">
+
+<!-- everything is self-hosted: no internet needed once the page has loaded -->
+<link rel="preload" href="assets/fonts/bebas-neue-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/space-grotesk-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/vendor/fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/fonts.css?v=1">
+<link rel="stylesheet" href="assets/vendor/fontawesome/css/fontawesome.min.css">
+<link rel="stylesheet" href="assets/vendor/fontawesome/css/solid.min.css">
+<link rel="stylesheet" href="assets/css/style.css?v=24">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><img src="assets/img/slogo.png" alt="GNARLY! PH"><span>BARCODE STUDIO</span></div>
+  <div class="top-actions">
+    <button class="install-btn" id="install" type="button" hidden title="Install this app on your device"><i class="fa-solid fa-download" aria-hidden="true"></i><span>INSTALL</span></button>
+    <button class="theme-switch" id="dark" type="button" role="switch" aria-checked="false" aria-label="Dark mode" title="Toggle dark mode">
+      <span class="ts-track">
+        <span class="ts-stars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="ts-cloud" aria-hidden="true"></span>
+        <span class="ts-thumb" aria-hidden="true"><span class="ts-sun"><i class="fa-solid fa-sun"></i></span><span class="ts-moon"><i class="fa-solid fa-moon"></i></span></span>
+      </span>
+    </button>
+  </div>
+</header>
+
+<main class="main">
+  <div class="section-header">
+    <div class="titles">
+      <h1 class="section-title"><i class="fa-solid fa-barcode"></i>BARCODE GENERATOR</h1>
+      <div class="section-sub">PICK A FORMAT &middot; ENTER OR AUTO-GENERATE NUMBERS &middot; DOWNLOAD OR PRINT</div>
+    </div>
+    <div class="modes" id="modes" role="tablist" aria-label="Mode">
+      <button class="mode is-active" type="button" role="tab" data-mode="single" aria-selected="true"><i class="fa-solid fa-barcode" aria-hidden="true"></i> SINGLE</button>
+      <button class="mode" type="button" role="tab" data-mode="batch" aria-selected="false"><i class="fa-solid fa-table-cells" aria-hidden="true"></i> BATCH &amp; LABELS</button>
+    </div>
+  </div>
+
+  <!-- ═════════ SINGLE BARCODE ═════════ -->
+  <div class="layout" id="single">
+    <div class="col">
+      <section class="card">
+        <h2 class="card-title"><i class="fa-solid fa-layer-group"></i>1 &middot; CHOOSE FORMAT</h2>
+        <div class="cats" id="cats" role="tablist" aria-label="Format type"></div>
+        <div class="formats" id="formats" role="radiogroup" aria-label="Barcode format"></div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title"><i class="fa-solid fa-keyboard"></i>2 &middot; ENTER NUMBERS</h2>
+        <div class="form-row">
+          <label class="form-label" for="num">Barcode value <span id="count" class="count">0/0</span></label>
+          <input class="form-input mono" id="num" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" aria-describedby="hint msg">
+          <div class="hint" id="hint"></div>
+          <div class="msg" id="msg" role="alert"></div>
+        </div>
+        <div class="form-grid3">
+          <div class="form-row">
+            <label class="form-label" for="scale" id="scale-label">Bar width</label>
+            <div class="sel-wrap"><i class="fa-solid fa-arrows-left-right sel-icon"></i>
+              <select class="form-select" id="scale">
+                <option value="2">2 px &middot; Thin</option><option value="3" selected>3 px &middot; Standard</option><option value="4">4 px &middot; Wide</option><option value="5">5 px &middot; Extra wide</option>
+              </select><i class="fa-solid fa-chevron-down sel-arrow"></i>
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="height">Bar height</label>
+            <div class="sel-wrap"><i class="fa-solid fa-arrows-up-down sel-icon"></i>
+              <select class="form-select" id="height">
+                <option value="40">Short</option><option value="60" selected>Medium</option><option value="80">Tall</option><option value="100">Extra tall</option>
+              </select><i class="fa-solid fa-chevron-down sel-arrow"></i>
+            </div>
+          </div>
+        </div>
+        <div class="gen-row">
+          <label class="check"><input type="checkbox" id="showtext" checked> Show number</label>
+          <button class="btn btn-block" id="rnd" type="button"><i class="fa-solid fa-wand-magic-sparkles"></i> AUTO-GENERATE NUMBER</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="card sticky">
+        <h2 class="card-title"><i class="fa-solid fa-eye"></i>PREVIEW</h2>
+        <div id="out" class="out" aria-live="polite"></div>
+        <div class="kpis">
+          <div class="kpi"><span class="kpi-label">Encoded value</span><span class="kpi-val" id="encoded">—</span></div>
+          <div class="kpi"><span class="kpi-label" id="modules-label">Bar modules</span><span class="kpi-val" id="modules">—</span></div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="png" type="button"><i class="fa-solid fa-image"></i> PNG</button>
+          <button class="btn" id="svg" type="button"><i class="fa-solid fa-vector-square"></i> SVG</button>
+          <button class="btn btn-ghost" id="prt" type="button"><i class="fa-solid fa-print"></i> PRINT</button>
+          <button class="btn btn-ghost" id="cpy" type="button"><i class="fa-solid fa-copy"></i> COPY NUMBER</button>
+        </div>
+        <p class="note">Bars are always black on white so every scanner can read them. Keep the blank margin on both sides when you print.</p>
+      </section>
+    </div>
+  </div>
+
+  <!-- ═════════ BATCH & LABEL SHEETS ═════════ -->
+  <div class="batch" id="batch" hidden>
+    <div class="blayout">
+
+      <div class="bcol">
+        <section class="card bcard">
+          <h2 class="card-title"><i class="fa-solid fa-list-ol"></i>1 &middot; WHAT TO PRINT</h2>
+          <div class="bscroll">
+            <div class="form-row">
+              <label class="form-label" for="bformat" id="bformat-label">Format</label>
+              <div class="sel-wrap"><i class="fa-solid fa-barcode sel-icon"></i>
+                <select class="form-select" id="bformat" data-lazy></select><i class="fa-solid fa-chevron-down sel-arrow"></i>
+              </div>
+            </div>
+
+            <div class="cats bsrc" id="bsrc" role="tablist" aria-label="Where the values come from">
+              <button class="cat is-active" type="button" role="tab" data-src="list" aria-selected="true">LIST</button>
+              <button class="cat" type="button" role="tab" data-src="seq" aria-selected="false">SEQUENCE</button>
+              <button class="cat" type="button" role="tab" data-src="rand" aria-selected="false">RANDOM</button>
+            </div>
+
+            <div class="bpanel" data-panel="list">
+              <label class="form-label" for="blist">One value per line <span class="count" id="blist-count">0</span></label>
+              <div class="btable" id="btable">
+                <div class="bt-head" aria-hidden="true"><span class="bt-hn">#</span><span>VALUE</span><span class="bt-hs">CHECK</span></div>
+                <div class="bt-body" id="bt-body">
+                  <div class="bt-gutter" aria-hidden="true"><div class="bt-inner" id="bt-gutter"></div></div>
+                  <div class="bt-main">
+                    <div class="bt-layer" aria-hidden="true"><div class="bt-inner" id="bt-rows"></div></div>
+                    <textarea class="bt-ta" id="blist" wrap="off" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="Values, one per line" placeholder="Paste or type one value per line"></textarea>
+                  </div>
+                </div>
+              </div>
+              <div class="bbtns">
+                <button class="btn btn-ghost btn-sm" id="bsample" type="button"><i class="fa-solid fa-flask" aria-hidden="true"></i> LOAD SAMPLE</button>
+                <button class="btn btn-ghost btn-sm" id="bclear" type="button"><i class="fa-solid fa-eraser" aria-hidden="true"></i> CLEAR</button>
+              </div>
+            </div>
+
+            <div class="bpanel" data-panel="seq" hidden>
+              <div class="bgrid">
+                <div class="form-row"><label class="form-label" for="bs-prefix">Prefix</label><input class="form-input mono" id="bs-prefix" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="40"></div>
+                <div class="form-row"><label class="form-label" for="bs-start">Start at</label><input class="form-input mono" id="bs-start" type="number" inputmode="numeric" min="0" step="1"></div>
+                <div class="form-row"><label class="form-label" for="bs-count">How many (max 500)</label><input class="form-input mono" id="bs-count" type="number" inputmode="numeric" min="1" max="500" step="1"></div>
+                <div class="form-row"><label class="form-label" for="bs-step">Step</label><input class="form-input mono" id="bs-step" type="number" inputmode="numeric" min="1" step="1"></div>
+                <div class="form-row"><label class="form-label" for="bs-pad">Digits (zero-pad)</label><input class="form-input mono" id="bs-pad" type="number" inputmode="numeric" min="0" max="15" step="1"></div>
+                <div class="form-row"><label class="form-label" for="bs-suffix">Suffix</label><input class="form-input mono" id="bs-suffix" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="40"></div>
+              </div>
+              <div class="hint" id="bs-hint"></div>
+            </div>
+
+            <div class="bpanel" data-panel="rand" hidden>
+              <div class="form-row"><label class="form-label" for="br-count">How many (max 500)</label><input class="form-input mono" id="br-count" type="number" inputmode="numeric" min="1" max="500" step="1"></div>
+              <button class="btn btn-block" id="br-go" type="button"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> GENERATE RANDOM SET</button>
+              <div class="hint">Valid random values for the chosen format. Press again for a fresh set.</div>
+            </div>
+
+            <div class="form-label bstyle-title">Style</div>
+            <div class="bgrid4 bopts" id="bstyle">
+              <label class="check"><input type="checkbox" id="bshowtext" checked> Show number</label>
+              <label class="check"><input type="checkbox" id="bguides"> Cut guides</label>
+              <div class="form-row"><label class="form-label" for="bheight">Bar height</label>
+                <div class="sel-wrap"><i class="fa-solid fa-arrows-up-down sel-icon"></i><select class="form-select" id="bheight"><option value="40">Short</option><option value="60" selected>Medium</option><option value="80">Tall</option><option value="100">Extra tall</option></select><i class="fa-solid fa-chevron-down sel-arrow"></i></div></div>
+              <div class="form-row"><label class="form-label" for="bscale">Bar width (ZIP)</label>
+                <div class="sel-wrap"><i class="fa-solid fa-arrows-left-right sel-icon"></i><select class="form-select" id="bscale"><option value="2">2 px &middot; Thin</option><option value="3" selected>3 px &middot; Standard</option><option value="4">4 px &middot; Wide</option><option value="5">5 px &middot; Extra wide</option></select><i class="fa-solid fa-chevron-down sel-arrow"></i></div></div>
+            </div>
+            <div class="bstatus" id="bstatus" role="status" aria-live="polite"></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="bcol">
+        <section class="card bcard">
+          <h2 class="card-title"><i class="fa-solid fa-table-cells"></i>2 &middot; LABEL SHEET</h2>
+
+          <div class="bsetup">
+            <div class="bgrid3">
+              <div class="form-row"><label class="form-label" for="bpaper">Paper</label>
+                <div class="sel-wrap"><i class="fa-solid fa-file sel-icon"></i><select class="form-select" id="bpaper"><option value="a4" selected>A4 &middot; 210×297</option><option value="letter">Letter &middot; 8.5×11</option></select><i class="fa-solid fa-chevron-down sel-arrow"></i></div></div>
+              <div class="form-row"><label class="form-label" for="blayout">Labels per page</label>
+                <div class="sel-wrap"><i class="fa-solid fa-table-cells-large sel-icon"></i><select class="form-select" id="blayout" data-lazy></select><i class="fa-solid fa-chevron-down sel-arrow"></i></div></div>
+              <div class="form-row"><label class="form-label" for="borient">Orientation</label>
+                <div class="sel-wrap"><i class="fa-solid fa-rotate sel-icon"></i><select class="form-select" id="borient"><option value="p" selected>Portrait</option><option value="l">Landscape</option></select><i class="fa-solid fa-chevron-down sel-arrow"></i></div></div>
+            </div>
+
+            <div class="bgrid4">
+              <div class="form-row"><label class="form-label" for="bmargin">Margin mm</label><input class="form-input mono" id="bmargin" type="number" inputmode="decimal" min="0" max="40" step="0.5"></div>
+              <div class="form-row"><label class="form-label" for="bgap">Gap mm</label><input class="form-input mono" id="bgap" type="number" inputmode="decimal" min="0" max="20" step="0.5"></div>
+              <div class="form-row"><label class="form-label" for="bcopies">Copies each</label><input class="form-input mono" id="bcopies" type="number" inputmode="numeric" min="1" max="99" step="1"></div>
+              <div class="form-row"><label class="form-label" for="bstart">Start at label</label><input class="form-input mono" id="bstart" type="number" inputmode="numeric" min="1" step="1"></div>
+            </div>
+
+            <div class="bgrid4" id="bcustom" hidden>
+              <div class="form-row"><label class="form-label" for="bcols">Columns</label><input class="form-input mono" id="bcols" type="number" inputmode="numeric" min="1" max="20" step="1"></div>
+              <div class="form-row"><label class="form-label" for="brows">Rows</label><input class="form-input mono" id="brows" type="number" inputmode="numeric" min="1" max="40" step="1"></div>
+              <div class="form-row"><label class="form-label" for="blw">Label W mm</label><input class="form-input mono" id="blw" type="number" inputmode="decimal" min="8" max="300" step="0.1"></div>
+              <div class="form-row"><label class="form-label" for="blh">Label H mm</label><input class="form-input mono" id="blh" type="number" inputmode="decimal" min="8" max="300" step="0.1"></div>
+            </div>
+
+            <div class="msg" id="blayout-msg" role="alert"></div>
+          </div>
+
+          <div class="cats btabs" id="bview" role="tablist" aria-label="Preview">
+            <button class="cat is-active" type="button" role="tab" data-view="sheet" aria-selected="true">SHEET PREVIEW</button>
+            <button class="cat" type="button" role="tab" data-view="list" aria-selected="false">LIST</button>
+          </div>
+
+          <div class="bview" id="bsheetview">
+            <div class="bpreview" id="bpreview"><div class="bpaper-wrap" id="bpaperwrap"><div class="bpaper" id="bsheet"></div></div></div>
+            <div class="bpager">
+              <button class="btn btn-ghost btn-sm" id="bprev" type="button" aria-label="Previous page"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+              <span id="bpage" aria-live="polite">—</span>
+              <button class="btn btn-ghost btn-sm" id="bnext" type="button" aria-label="Next page"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+            </div>
+          </div>
+          <div class="bview" id="blistview" hidden><ol class="blist" id="blistrows"></ol></div>
+
+          <div class="actions bactions">
+            <button class="btn btn-block" id="bprint" type="button"><i class="fa-solid fa-print" aria-hidden="true"></i> PRINT LABELS</button>
+            <button class="btn" id="bpdf" type="button" title="A PDF of the label sheets: print it from any PDF viewer with no browser header or footer"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> <span>PDF</span></button>
+            <button class="btn" id="bzip-png" type="button"><i class="fa-solid fa-file-zipper" aria-hidden="true"></i> <span>ZIP · PNG</span></button>
+            <button class="btn" id="bzip-svg" type="button"><i class="fa-solid fa-file-zipper" aria-hidden="true"></i> <span>ZIP · SVG</span></button>
+          </div>
+        </section>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<div id="print-area" aria-hidden="true"></div>
+<style id="page-size"></style>
+<button class="jump" id="jump" type="button" aria-label="Go to the barcode preview"><i class="fa-solid fa-arrow-down" aria-hidden="true"></i> BARCODE</button>
+<div class="toast" id="toast" role="status"></div>
+<script src="assets/js/script.js?v=20"></script>
+<script src="assets/js/modal.js?v=3"></script>
+<script src="assets/js/batch.js?v=15"></script>
+<script src="assets/js/pwa.js?v=4"></script>
+</body>
+</html>
